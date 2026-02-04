@@ -1,30 +1,41 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
+export const GameColors = {
+  primary: "#FF6B35",
+  secondary: "#F7931E",
+  accent: "#00D9C0",
+  background: "#FFF4E6",
+  textDark: "#2C3E50",
+  textLight: "#FFFFFF",
+  surface: "#FFFFFF",
+  blockColors: ["#9B59B6", "#3498DB", "#2ECC71", "#F39C12", "#E74C3C", "#1ABC9C", "#E91E63", "#673AB7", "#FF5722"],
+};
+
+const tintColorLight = GameColors.primary;
+const tintColorDark = "#FF8A5C";
 
 export const Colors = {
   light: {
-    text: "#11181C",
-    buttonText: "#FFFFFF",
+    text: GameColors.textDark,
+    buttonText: GameColors.textLight,
     tabIconDefault: "#687076",
     tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    link: GameColors.primary,
+    backgroundRoot: GameColors.background,
+    backgroundDefault: "#FFE8D6",
+    backgroundSecondary: "#FFDCC4",
+    backgroundTertiary: "#FFD0B2",
   },
   dark: {
     text: "#ECEDEE",
     buttonText: "#FFFFFF",
     tabIconDefault: "#9BA1A6",
     tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    link: tintColorDark,
+    backgroundRoot: "#1F2123",
+    backgroundDefault: "#2A2C2E",
+    backgroundSecondary: "#353739",
+    backgroundTertiary: "#404244",
   },
 };
 
@@ -54,6 +65,11 @@ export const BorderRadius = {
 };
 
 export const Typography = {
+  display: {
+    fontSize: 48,
+    lineHeight: 56,
+    fontWeight: "700" as const,
+  },
   h1: {
     fontSize: 32,
     lineHeight: 40,
@@ -89,17 +105,23 @@ export const Typography = {
     lineHeight: 24,
     fontWeight: "400" as const,
   },
+  statNumber: {
+    fontSize: 24,
+    lineHeight: 32,
+    fontWeight: "700" as const,
+  },
+  caption: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "400" as const,
+  },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: "ui-monospace",
   },
   default: {
