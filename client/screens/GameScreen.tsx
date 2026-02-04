@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { View, StyleSheet, Pressable, Image } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -7,10 +7,8 @@ import { Feather } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withSequence,
   withTiming,
-  runOnJS,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
@@ -42,12 +40,12 @@ export default function GameScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     tapScale.value = withSequence(
-      withTiming(1.02, { duration: 50 }),
-      withSpring(1, { damping: 15, stiffness: 300 })
+      withTiming(1.01, { duration: 50 }),
+      withTiming(1, { duration: 100 })
     );
 
     tapOpacity.value = withSequence(
-      withTiming(0.3, { duration: 50 }),
+      withTiming(0.15, { duration: 50 }),
       withTiming(0, { duration: 150 })
     );
 
@@ -72,6 +70,7 @@ export default function GameScreen() {
     : 0;
 
   const clicksRemaining = gameState.currentBlockRequired - gameState.currentBlockClicks;
+  const currentBlockIndex = gameState.blocksDestroyed;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.lg }]}>
@@ -80,6 +79,7 @@ export default function GameScreen() {
           timeElapsed={gameState.timeElapsed}
           blocksDestroyed={gameState.blocksDestroyed}
           clicksRemaining={clicksRemaining}
+          currentBlockIndex={currentBlockIndex}
         />
         <Pressable
           style={styles.pauseButton}
@@ -107,12 +107,16 @@ export default function GameScreen() {
           <Character state={gameState.characterState} />
         </View>
 
-        <Tower blocksRemaining={gameState.blocksRemaining} progress={progress} />
+        <Tower
+          blocksRemaining={gameState.blocksRemaining}
+          progress={progress}
+          currentBlockIndex={currentBlockIndex}
+        />
       </AnimatedPressable>
 
       <View style={styles.footer}>
         <View style={styles.clickCounterContainer}>
-          <ThemedText style={styles.clickCounterLabel}>TAPS ON BLOCK</ThemedText>
+          <ThemedText style={styles.clickCounterLabel}>TAPS ON CURRENT BLOCK</ThemedText>
           <ThemedText style={styles.clickCounter}>{gameState.currentBlockClicks.toLocaleString()}</ThemedText>
           <View style={styles.progressBar}>
             <Animated.View
@@ -124,6 +128,9 @@ export default function GameScreen() {
               ]}
             />
           </View>
+          <ThemedText style={styles.remainingText}>
+            {clicksRemaining.toLocaleString()} taps to go
+          </ThemedText>
         </View>
 
         {gameState.activeBonus ? (
@@ -195,12 +202,12 @@ const styles = StyleSheet.create({
   },
   characterContainer: {
     alignItems: "center",
-    marginBottom: -20,
+    marginBottom: Spacing.sm,
     zIndex: 10,
   },
   footer: {
     alignItems: "center",
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.lg,
   },
   clickCounterContainer: {
     alignItems: "center",
@@ -208,29 +215,36 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   clickCounterLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Nunito_600SemiBold",
     color: GameColors.textDark,
-    opacity: 0.6,
+    opacity: 0.5,
     letterSpacing: 1,
   },
   clickCounter: {
-    fontSize: 48,
+    fontSize: 42,
     fontFamily: "Nunito_800ExtraBold",
     color: GameColors.primary,
     marginVertical: Spacing.xs,
   },
   progressBar: {
     width: "100%",
-    height: 8,
+    height: 10,
     backgroundColor: "rgba(0,0,0,0.1)",
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
     backgroundColor: GameColors.accent,
-    borderRadius: 4,
+    borderRadius: 5,
+  },
+  remainingText: {
+    fontSize: 14,
+    fontFamily: "Nunito_600SemiBold",
+    color: GameColors.textDark,
+    opacity: 0.6,
+    marginTop: Spacing.sm,
   },
   activeBonusIndicator: {
     flexDirection: "row",

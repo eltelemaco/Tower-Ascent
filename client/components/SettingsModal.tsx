@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, StyleSheet, Modal, Pressable, Switch, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { GameColors, Spacing, BorderRadius } from "@/constants/theme";
+import { useGame } from "@/context/GameContext";
 
 interface SettingsModalProps {
   visible: boolean;
@@ -14,8 +15,7 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const { gameState, setSoundEnabled } = useGame();
 
   const handleResetProgress = () => {
     if (Platform.OS === "web") {
@@ -65,39 +65,23 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
           <View style={styles.settingsList}>
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <Feather name="volume-2" size={20} color={GameColors.textDark} />
-                <ThemedText style={styles.settingLabel}>Sound Effects</ThemedText>
+                <Feather name="smartphone" size={20} color={GameColors.textDark} />
+                <View>
+                  <ThemedText style={styles.settingLabel}>Sound & Haptics</ThemedText>
+                  <ThemedText style={styles.settingDescription}>Vibration feedback on actions</ThemedText>
+                </View>
               </View>
               <Switch
-                value={soundEnabled}
+                value={gameState.soundEnabled}
                 onValueChange={(value) => {
                   setSoundEnabled(value);
-                  if (hapticsEnabled) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                }}
-                trackColor={{ false: "#E0E0E0", true: GameColors.accent }}
-                thumbColor={GameColors.surface}
-                testID="switch-sound"
-              />
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <Feather name="smartphone" size={20} color={GameColors.textDark} />
-                <ThemedText style={styles.settingLabel}>Haptic Feedback</ThemedText>
-              </View>
-              <Switch
-                value={hapticsEnabled}
-                onValueChange={(value) => {
-                  setHapticsEnabled(value);
                   if (value) {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
                 }}
                 trackColor={{ false: "#E0E0E0", true: GameColors.accent }}
                 thumbColor={GameColors.surface}
-                testID="switch-haptics"
+                testID="switch-sound"
               />
             </View>
           </View>
@@ -113,7 +97,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             </Pressable>
           </View>
 
-          <ThemedText style={styles.version}>Version 1.0.0</ThemedText>
+          <ThemedText style={styles.version}>Tower Rescue v1.0.0</ThemedText>
         </Animated.View>
       </Animated.View>
     </Modal>
@@ -174,11 +158,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
+    flex: 1,
   },
   settingLabel: {
     fontSize: 16,
     fontFamily: "Nunito_600SemiBold",
     color: GameColors.textDark,
+  },
+  settingDescription: {
+    fontSize: 12,
+    fontFamily: "Nunito_400Regular",
+    color: GameColors.textDark,
+    opacity: 0.6,
   },
   dangerZone: {
     marginTop: Spacing["2xl"],

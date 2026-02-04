@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 
 const CLICK_REQUIREMENTS = [1, 22, 333, 4444, 55555, 666666, 7777777, 88888888, 999999999];
 
@@ -21,6 +22,16 @@ const CHARACTER_MESSAGES = [
   "Freedom awaits!",
   "Don't give up!",
   "Amazing!",
+  "Wow!",
+  "Keep going!",
+  "You're the best!",
+  "So strong!",
+  "Hooray!",
+  "Fantastic!",
+  "I believe in you!",
+  "Nearly free!",
+  "One more push!",
+  "Super!",
 ];
 
 interface GameStats {
@@ -53,6 +64,7 @@ interface GameState {
   characterState: "idle" | "cheer" | "worry";
   showBonus: boolean;
   pendingBonus: Bonus | null;
+  soundEnabled: boolean;
 }
 
 interface GameContextType {
@@ -66,6 +78,7 @@ interface GameContextType {
   goToMenu: () => void;
   claimBonus: () => void;
   skipBonus: () => void;
+  setSoundEnabled: (enabled: boolean) => void;
 }
 
 const defaultGameState: GameState = {
@@ -84,6 +97,7 @@ const defaultGameState: GameState = {
   characterState: "idle",
   showBonus: false,
   pendingBonus: null,
+  soundEnabled: true,
 };
 
 const defaultStats: GameStats = {
@@ -100,6 +114,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<GameStats>(defaultStats);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageRef = useRef<string>("");
 
   useEffect(() => {
     loadStats();
@@ -147,22 +162,46 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const showCharacterMessage = useCallback((message: string) => {
+  const playHaptic = useCallback((type: "tap" | "destroy" | "bonus" | "victory") => {
+    if (!gameState.soundEnabled) return;
+    
+    try {
+      if (type === "tap") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (type === "destroy") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      } else if (type === "bonus") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else if (type === "victory") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      // Haptics may not be available on all platforms
+    }
+  }, [gameState.soundEnabled]);
+
+  const showCharacterMessage = useCallback(() => {
     if (messageTimeoutRef.current) {
       clearTimeout(messageTimeoutRef.current);
     }
-    setGameState((prev) => ({ ...prev, characterMessage: message }));
+    
+    let newMessage = CHARACTER_MESSAGES[Math.floor(Math.random() * CHARACTER_MESSAGES.length)];
+    while (newMessage === lastMessageRef.current && CHARACTER_MESSAGES.length > 1) {
+      newMessage = CHARACTER_MESSAGES[Math.floor(Math.random() * CHARACTER_MESSAGES.length)];
+    }
+    lastMessageRef.current = newMessage;
+    
+    setGameState((prev) => ({ ...prev, characterMessage: newMessage }));
     messageTimeoutRef.current = setTimeout(() => {
       setGameState((prev) => ({ ...prev, characterMessage: "" }));
     }, 2000);
   }, []);
 
-  const getRandomMessage = () => {
-    return CHARACTER_MESSAGES[Math.floor(Math.random() * CHARACTER_MESSAGES.length)];
-  };
-
-  const getRandomBonus = (): Bonus => {
-    return BONUSES[Math.floor(Math.random() * BONUSES.length)];
+  const getRandomBonus = (): Bonus | null => {
+    if (Math.random() < 0.7) {
+      return BONUSES[Math.floor(Math.random() * BONUSES.length)];
+    }
+    return null;
   };
 
   const handleTap = useCallback(() => {
@@ -172,11 +211,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const newClicks = gameState.currentBlockClicks + clickValue;
     const newTotalClicks = gameState.totalClicks + clickValue;
 
+    playHaptic("tap");
+
     if (newClicks >= gameState.currentBlockRequired) {
       const newBlocksDestroyed = gameState.blocksDestroyed + 1;
       const newBlocksRemaining = gameState.blocksRemaining - 1;
 
+      playHaptic("destroy");
+
       if (newBlocksRemaining === 0) {
+        playHaptic("victory");
         const newStats: GameStats = {
           towersCompleted: stats.towersCompleted + 1,
           totalBlocksDestroyed: stats.totalBlocksDestroyed + newBlocksDestroyed,
@@ -199,6 +243,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }));
       } else {
         const bonus = getRandomBonus();
+        if (bonus) {
+          playHaptic("bonus");
+        }
         setGameState((prev) => ({
           ...prev,
           blocksRemaining: newBlocksRemaining,
@@ -207,11 +254,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           totalClicks: newTotalClicks,
           blocksDestroyed: newBlocksDestroyed,
           characterState: "cheer",
-          showBonus: true,
+          showBonus: bonus !== null,
           pendingBonus: bonus,
           bonusMultiplier: 1,
         }));
-        showCharacterMessage("Block destroyed!");
+        showCharacterMessage();
       }
     } else {
       const progress = newClicks / gameState.currentBlockRequired;
@@ -220,8 +267,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       else if (progress > 0.5) characterState = "idle";
       else if (gameState.blocksRemaining <= 3) characterState = "worry";
 
-      if (Math.random() < 0.03) {
-        showCharacterMessage(getRandomMessage());
+      if (Math.random() < 0.02) {
+        showCharacterMessage();
       }
 
       setGameState((prev) => ({
@@ -231,7 +278,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         characterState,
       }));
     }
-  }, [gameState, stats, showCharacterMessage]);
+  }, [gameState, stats, showCharacterMessage, playHaptic]);
 
   const claimBonus = useCallback(() => {
     if (!gameState.pendingBonus) return;
@@ -247,7 +294,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const newBlocksDestroyed = gameState.blocksDestroyed + 1;
       const newBlocksRemaining = gameState.blocksRemaining - 1;
 
+      playHaptic("destroy");
+
       if (newBlocksRemaining === 0) {
+        playHaptic("victory");
         const newStats: GameStats = {
           towersCompleted: stats.towersCompleted + 1,
           totalBlocksDestroyed: stats.totalBlocksDestroyed + newBlocksDestroyed,
@@ -286,8 +336,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
 
     setGameState((prev) => ({ ...prev, ...newState }));
-    showCharacterMessage("Bonus activated!");
-  }, [gameState, stats, showCharacterMessage]);
+    showCharacterMessage();
+  }, [gameState, stats, showCharacterMessage, playHaptic]);
 
   const skipBonus = useCallback(() => {
     setGameState((prev) => ({
@@ -301,8 +351,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState({
       ...defaultGameState,
       isPlaying: true,
+      soundEnabled: gameState.soundEnabled,
     });
-  }, []);
+  }, [gameState.soundEnabled]);
 
   const pauseGame = useCallback(() => {
     setGameState((prev) => ({ ...prev, isPaused: true }));
@@ -316,11 +367,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState({
       ...defaultGameState,
       isPlaying: true,
+      soundEnabled: gameState.soundEnabled,
     });
-  }, []);
+  }, [gameState.soundEnabled]);
 
   const goToMenu = useCallback(() => {
-    setGameState(defaultGameState);
+    setGameState((prev) => ({ ...defaultGameState, soundEnabled: prev.soundEnabled }));
+  }, []);
+
+  const setSoundEnabled = useCallback((enabled: boolean) => {
+    setGameState((prev) => ({ ...prev, soundEnabled: enabled }));
   }, []);
 
   return (
@@ -336,6 +392,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         goToMenu,
         claimBonus,
         skipBonus,
+        setSoundEnabled,
       }}
     >
       {children}
