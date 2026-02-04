@@ -101,9 +101,11 @@ export default function GameScreen() {
         <Animated.View style={[styles.tapFeedback, tapFeedbackStyle]} />
 
         <View style={styles.characterContainer}>
-          {gameState.characterMessage.length > 0 ? (
-            <SpeechBubble message={gameState.characterMessage} />
-          ) : null}
+          <View style={styles.speechBubbleContainer}>
+            {gameState.characterMessage.length > 0 ? (
+              <SpeechBubble message={gameState.characterMessage} />
+            ) : null}
+          </View>
           <Character state={gameState.characterState} />
         </View>
 
@@ -204,6 +206,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.sm,
     zIndex: 10,
+  },
+  speechBubbleContainer: {
+    height: 50,
+    justifyContent: "flex-end",
+    alignItems: "center",
   },
   footer: {
     alignItems: "center",
