@@ -109,6 +109,7 @@ interface GameContextType {
   setSoundEnabled: (enabled: boolean) => void;
   collectGem: (gemId: string) => void;
   purchaseTool: (tool: Tool) => boolean;
+  addGems: (amount: number) => void;
 }
 
 const defaultGameState: GameState = {
@@ -277,6 +278,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }));
     return true;
   }, [gameState.gems, playHaptic]);
+
+  const addGems = useCallback((amount: number) => {
+    if (amount <= 0) return;
+    playHaptic("bonus");
+    setGameState((prev) => ({
+      ...prev,
+      gems: prev.gems + amount,
+      totalGems: prev.totalGems + amount,
+    }));
+  }, [playHaptic]);
 
   const handleTap = useCallback(() => {
     if (gameState.isPaused || gameState.isVictory || !gameState.isPlaying || gameState.showBonus) return;
@@ -483,6 +494,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setSoundEnabled,
         collectGem,
         purchaseTool,
+        addGems,
       }}
     >
       {children}

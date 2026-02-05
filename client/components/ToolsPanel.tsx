@@ -6,7 +6,7 @@ import { useGame, TOOLS, Tool } from "../context/GameContext";
 import { GameColors, Spacing, BorderRadius } from "../constants/theme";
 
 export function ToolsPanel() {
-  const { gameState, purchaseTool } = useGame();
+  const { gameState, purchaseTool, addGems } = useGame();
   const [showShop, setShowShop] = useState(false);
 
   const handlePurchase = (tool: Tool) => {
@@ -19,10 +19,14 @@ export function ToolsPanel() {
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.gemCounter}>
+        <Pressable
+          style={styles.gemCounter}
+          onPress={() => addGems(10)}
+          testID="gem-counter"
+        >
           <Feather name="hexagon" size={18} color={GameColors.gem} />
           <ThemedText style={styles.gemCount}>{gameState.gems}</ThemedText>
-        </View>
+        </Pressable>
         
         <Pressable 
           style={styles.shopButton}
