@@ -7,7 +7,9 @@ export const GameColors = {
   background: "#FFF4E6",
   textDark: "#2C3E50",
   textLight: "#FFFFFF",
+  textMuted: "#95A5A6",
   surface: "#FFFFFF",
+  gem: "#9B59B6",
   blockColors: ["#9B59B6", "#3498DB", "#2ECC71", "#F39C12", "#E74C3C", "#1ABC9C", "#E91E63", "#673AB7", "#FF5722"],
 };
 
