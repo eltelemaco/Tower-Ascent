@@ -1,0 +1,42 @@
+# Dependencies (reinstalled in container)
+node_modules/
+
+# Build outputs (recreated in container)
+server_dist/
+static-build/
+.expo/
+dist/
+web-build/
+
+# Git and IDE
+.git/
+.github/
+.cursor/
+*.md
+!README.md
+
+# Replit / local dev
+.replit
+replit.md
+
+# Metro / cache
+.metro-health-check*
+*.tsbuildinfo
+expo-env.d.ts
+
+# Native / secrets
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.env*.local
+
+# Misc
+*.log
+.DS_Store
+app-example
+/ios
+/android

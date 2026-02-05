@@ -169,7 +169,12 @@ function configureExpoAndLanding(app: express.Application) {
   );
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const appName = getAppName();
+  const distPath = path.resolve(process.cwd(), "dist");
+  const hasWebBuild = fs.existsSync(distPath);
 
+  if (hasWebBuild) {
+    log("Serving web app at / (game loads in browser)");
+  }
   log("Serving static Expo files with dynamic manifest routing");
 
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -177,16 +182,22 @@ function configureExpoAndLanding(app: express.Application) {
       return next();
     }
 
-    if (req.path !== "/" && req.path !== "/manifest") {
-      return next();
-    }
-
     const platform = req.header("expo-platform");
-    if (platform && (platform === "ios" || platform === "android")) {
+
+    // Expo Go: serve manifest for ios/android when requesting / or /manifest
+    if (
+      (req.path === "/" || req.path === "/manifest") &&
+      platform &&
+      (platform === "ios" || platform === "android")
+    ) {
       return serveExpoManifest(platform, res);
     }
 
+    // Browser at /: serve web app (game) when dist exists, otherwise landing page
     if (req.path === "/") {
+      if (hasWebBuild) {
+        return res.sendFile(path.join(distPath, "index.html"));
+      }
       return serveLandingPage({
         req,
         res,
@@ -197,6 +208,11 @@ function configureExpoAndLanding(app: express.Application) {
 
     next();
   });
+
+  // Web app static assets (JS, CSS, etc. from expo export --platform web)
+  if (hasWebBuild) {
+    app.use(express.static(distPath, { index: false }));
+  }
 
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
