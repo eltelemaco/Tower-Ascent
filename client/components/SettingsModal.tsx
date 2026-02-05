@@ -9,6 +9,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { GameColors, Spacing, BorderRadius } from "@/constants/theme";
 import { useGame } from "@/context/GameContext";
 
+import packageJson from "../../package.json";
+
 interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
@@ -97,7 +99,9 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             </Pressable>
           </View>
 
-          <ThemedText style={styles.version}>Tower Rescue v1.0.0</ThemedText>
+          <ThemedText style={styles.version}>
+            Tower Rescue v{packageJson.version}
+          </ThemedText>
         </Animated.View>
       </Animated.View>
     </Modal>
