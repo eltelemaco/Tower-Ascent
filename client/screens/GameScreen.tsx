@@ -23,13 +23,15 @@ import PauseModal from "@/components/PauseModal";
 import VictoryModal from "@/components/VictoryModal";
 import BonusModal from "@/components/BonusModal";
 import SpeechBubble from "@/components/SpeechBubble";
+import { FallingGem } from "@/components/FallingGem";
+import { ToolsPanel } from "@/components/ToolsPanel";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function GameScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { gameState, handleTap, pauseGame, resumeGame, restartGame, goToMenu, claimBonus, skipBonus } = useGame();
+  const { gameState, handleTap, pauseGame, resumeGame, restartGame, goToMenu, claimBonus, skipBonus, collectGem } = useGame();
 
   const tapScale = useSharedValue(1);
   const tapOpacity = useSharedValue(0);
@@ -75,23 +77,30 @@ export default function GameScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing.lg }]}>
       <View style={styles.header}>
-        <StatsPanel
-          timeElapsed={gameState.timeElapsed}
-          blocksDestroyed={gameState.blocksDestroyed}
-          clicksRemaining={clicksRemaining}
-          currentBlockIndex={currentBlockIndex}
-        />
-        <Pressable
-          style={styles.pauseButton}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            pauseGame();
-          }}
-          testID="button-pause"
-        >
-          <Feather name="pause" size={20} color={GameColors.textDark} />
-        </Pressable>
+        <ToolsPanel />
+        <View style={styles.headerRight}>
+          <StatsPanel
+            timeElapsed={gameState.timeElapsed}
+            blocksDestroyed={gameState.blocksDestroyed}
+            clicksRemaining={clicksRemaining}
+            currentBlockIndex={currentBlockIndex}
+          />
+          <Pressable
+            style={styles.pauseButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              pauseGame();
+            }}
+            testID="button-pause"
+          >
+            <Feather name="pause" size={20} color={GameColors.textDark} />
+          </Pressable>
+        </View>
       </View>
+
+      {gameState.fallingGems.map((gem) => (
+        <FallingGem key={gem.id} gem={gem} onCollect={collectGem} />
+      ))}
 
       <AnimatedPressable
         style={[styles.gameArea, tapAreaAnimatedStyle]}
@@ -178,6 +187,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
   },
   pauseButton: {
     width: 44,

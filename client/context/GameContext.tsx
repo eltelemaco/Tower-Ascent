@@ -4,6 +4,30 @@ import * as Haptics from "expo-haptics";
 
 const CLICK_REQUIREMENTS = [1, 22, 333, 4444, 55555, 666666, 7777777, 88888888, 999999999];
 
+export interface Tool {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost: number;
+  multiplier: number;
+}
+
+export const TOOLS: Tool[] = [
+  { id: "pickaxe", name: "Pickaxe", description: "2x tap power", icon: "tool", cost: 10, multiplier: 2 },
+  { id: "hammer", name: "Hammer", description: "5x tap power", icon: "tool", cost: 25, multiplier: 5 },
+  { id: "drill", name: "Drill", description: "10x tap power", icon: "zap", cost: 50, multiplier: 10 },
+  { id: "dynamite", name: "Dynamite", description: "25x tap power", icon: "zap", cost: 100, multiplier: 25 },
+  { id: "laser", name: "Laser", description: "50x tap power", icon: "zap", cost: 200, multiplier: 50 },
+  { id: "nuke", name: "Nuke", description: "100x tap power", icon: "zap", cost: 500, multiplier: 100 },
+];
+
+export interface FallingGem {
+  id: string;
+  x: number;
+  startY: number;
+}
+
 const BONUSES = [
   { id: "hammer", name: "Power Hammer", description: "Destroys 10% of next block!", icon: "bonus-hammer" },
   { id: "lightning", name: "Lightning Strike", description: "Instant destroy next block!", icon: "bonus-lightning" },
@@ -65,6 +89,10 @@ interface GameState {
   showBonus: boolean;
   pendingBonus: Bonus | null;
   soundEnabled: boolean;
+  gems: number;
+  totalGems: number;
+  activeTool: Tool | null;
+  fallingGems: FallingGem[];
 }
 
 interface GameContextType {
@@ -79,6 +107,8 @@ interface GameContextType {
   claimBonus: () => void;
   skipBonus: () => void;
   setSoundEnabled: (enabled: boolean) => void;
+  collectGem: (gemId: string) => void;
+  purchaseTool: (tool: Tool) => boolean;
 }
 
 const defaultGameState: GameState = {
@@ -98,6 +128,10 @@ const defaultGameState: GameState = {
   showBonus: false,
   pendingBonus: null,
   soundEnabled: true,
+  gems: 0,
+  totalGems: 0,
+  activeTool: null,
+  fallingGems: [],
 };
 
 const defaultStats: GameStats = {
@@ -204,14 +238,59 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return null;
   };
 
+  const spawnGem = useCallback(() => {
+    const gemId = `gem-${Date.now()}-${Math.random()}`;
+    const x = 20 + Math.random() * 60;
+    const startY = -50;
+    
+    setGameState((prev) => ({
+      ...prev,
+      fallingGems: [...prev.fallingGems, { id: gemId, x, startY }],
+    }));
+    
+    setTimeout(() => {
+      setGameState((prev) => ({
+        ...prev,
+        fallingGems: prev.fallingGems.filter((g) => g.id !== gemId),
+      }));
+    }, 3000);
+  }, []);
+
+  const collectGem = useCallback((gemId: string) => {
+    playHaptic("bonus");
+    setGameState((prev) => ({
+      ...prev,
+      gems: prev.gems + 1,
+      totalGems: prev.totalGems + 1,
+      fallingGems: prev.fallingGems.filter((g) => g.id !== gemId),
+    }));
+  }, [playHaptic]);
+
+  const purchaseTool = useCallback((tool: Tool): boolean => {
+    if (gameState.gems < tool.cost) return false;
+    
+    playHaptic("bonus");
+    setGameState((prev) => ({
+      ...prev,
+      gems: prev.gems - tool.cost,
+      activeTool: tool,
+    }));
+    return true;
+  }, [gameState.gems, playHaptic]);
+
   const handleTap = useCallback(() => {
     if (gameState.isPaused || gameState.isVictory || !gameState.isPlaying || gameState.showBonus) return;
 
-    const clickValue = gameState.bonusMultiplier;
+    const toolMultiplier = gameState.activeTool?.multiplier || 1;
+    const clickValue = gameState.bonusMultiplier * toolMultiplier;
     const newClicks = gameState.currentBlockClicks + clickValue;
     const newTotalClicks = gameState.totalClicks + clickValue;
 
     playHaptic("tap");
+    
+    if (Math.random() < 0.08) {
+      spawnGem();
+    }
 
     if (newClicks >= gameState.currentBlockRequired) {
       const newBlocksDestroyed = gameState.blocksDestroyed + 1;
@@ -348,12 +427,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const startGame = useCallback(() => {
-    setGameState({
+    setGameState((prev) => ({
       ...defaultGameState,
       isPlaying: true,
-      soundEnabled: gameState.soundEnabled,
-    });
-  }, [gameState.soundEnabled]);
+      soundEnabled: prev.soundEnabled,
+      gems: prev.gems,
+      totalGems: prev.totalGems,
+    }));
+  }, []);
 
   const pauseGame = useCallback(() => {
     setGameState((prev) => ({ ...prev, isPaused: true }));
@@ -364,15 +445,22 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const restartGame = useCallback(() => {
-    setGameState({
+    setGameState((prev) => ({
       ...defaultGameState,
       isPlaying: true,
-      soundEnabled: gameState.soundEnabled,
-    });
-  }, [gameState.soundEnabled]);
+      soundEnabled: prev.soundEnabled,
+      gems: prev.gems,
+      totalGems: prev.totalGems,
+    }));
+  }, []);
 
   const goToMenu = useCallback(() => {
-    setGameState((prev) => ({ ...defaultGameState, soundEnabled: prev.soundEnabled }));
+    setGameState((prev) => ({
+      ...defaultGameState,
+      soundEnabled: prev.soundEnabled,
+      gems: prev.gems,
+      totalGems: prev.totalGems,
+    }));
   }, []);
 
   const setSoundEnabled = useCallback((enabled: boolean) => {
@@ -393,6 +481,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         claimBonus,
         skipBonus,
         setSoundEnabled,
+        collectGem,
+        purchaseTool,
       }}
     >
       {children}
