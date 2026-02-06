@@ -16,7 +16,7 @@ export default function SpeechBubble({ message }: SpeechBubbleProps) {
       exiting={FadeOut.duration(150)}
       style={styles.container}
     >
-      <ThemedText style={styles.text}>{message}</ThemedText>
+      <ThemedText style={styles.text} selectable={false}>{message}</ThemedText>
       <View style={styles.tail} />
     </Animated.View>
   );

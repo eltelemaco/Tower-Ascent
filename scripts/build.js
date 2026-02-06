@@ -58,6 +58,27 @@ function getDeploymentDomain() {
   process.exit(1);
 }
 
+/**
+ * Full base URL including path (e.g. https://n8n.telemaco.com.mx/tower).
+ * Used for asset URLs and manifests. Defaults to https://{host} if no path.
+ */
+function getDeploymentBaseUrl() {
+  const raw =
+    process.env.REPLIT_INTERNAL_APP_DOMAIN ||
+    process.env.REPLIT_DEV_DOMAIN ||
+    process.env.EXPO_PUBLIC_DOMAIN;
+  if (!raw) {
+    console.error(
+      "ERROR: No deployment domain found. Set EXPO_PUBLIC_DOMAIN (e.g. https://n8n.telemaco.com.mx/tower)",
+    );
+    process.exit(1);
+  }
+  const trimmed = raw.trim();
+  const urlString = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const url = new URL(urlString);
+  return `${url.origin}${url.pathname.replace(/\/$/, "") || ""}`;
+}
+
 function prepareDirectories(timestamp) {
   console.log("Preparing build directories...");
 
@@ -501,7 +522,7 @@ async function main() {
   setupSignalHandlers();
 
   const domain = getDeploymentDomain();
-  const baseUrl = `https://${domain}`;
+  const baseUrl = getDeploymentBaseUrl();
   const timestamp = `${Date.now()}-${process.pid}`;
 
   prepareDirectories(timestamp);

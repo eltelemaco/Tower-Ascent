@@ -14,6 +14,9 @@ import { GameColors } from "../constants/theme";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+/** Fall duration in ms; half the previous speed so gems are easier to catch. */
+const FALL_DURATION_MS = 6000;
+
 interface FallingGemProps {
   gem: FallingGemType;
   onCollect: (gemId: string) => void;
@@ -28,7 +31,7 @@ export function FallingGem({ gem, onCollect }: FallingGemProps) {
 
   useEffect(() => {
     translateY.value = withTiming(SCREEN_HEIGHT + 100, {
-      duration: 3000,
+      duration: FALL_DURATION_MS,
       easing: Easing.linear,
     });
     rotate.value = withRepeat(

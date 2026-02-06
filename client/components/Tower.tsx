@@ -86,7 +86,7 @@ function Block({ row, col, blockIndex, isCurrentBlock, isDestroyed, progress }: 
 
         {isCurrentBlock ? (
           <View style={styles.currentIndicator}>
-            <ThemedText style={styles.ordinalText}>{ORDINALS[blockIndex]}</ThemedText>
+            <ThemedText style={styles.ordinalText} selectable={false}>{ORDINALS[blockIndex]}</ThemedText>
             <View style={styles.targetIcon}>
               <View style={styles.targetRing} />
               <View style={styles.targetDot} />
@@ -94,7 +94,7 @@ function Block({ row, col, blockIndex, isCurrentBlock, isDestroyed, progress }: 
           </View>
         ) : (
           <View style={styles.blockLabel}>
-            <ThemedText style={styles.ordinalTextSmall}>{ORDINALS[blockIndex]}</ThemedText>
+            <ThemedText style={styles.ordinalTextSmall} selectable={false}>{ORDINALS[blockIndex]}</ThemedText>
           </View>
         )}
 

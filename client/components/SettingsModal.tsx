@@ -2,7 +2,6 @@ import React from "react";
 import { View, StyleSheet, Modal, Pressable, Switch, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, SlideInUp } from "react-native-reanimated";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -17,7 +16,7 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
-  const { gameState, setSoundEnabled } = useGame();
+  const { gameState, setSoundEnabled, resetStats } = useGame();
 
   const handleResetProgress = () => {
     if (Platform.OS === "web") {
@@ -38,7 +37,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const performReset = async () => {
     try {
-      await AsyncStorage.removeItem("gameStats");
+      await resetStats();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onClose();
     } catch (error) {

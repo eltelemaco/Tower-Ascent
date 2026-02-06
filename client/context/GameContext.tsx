@@ -4,11 +4,14 @@ import * as Haptics from "expo-haptics";
 
 const CLICK_REQUIREMENTS = [1, 22, 333, 4444, 55555, 666666, 7777777, 88888888, 999999999];
 
+/** Feather icon names used for tools (pickaxe = tool, power = zap). */
+export type ToolIconName = "tool" | "zap";
+
 export interface Tool {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon: ToolIconName;
   cost: number;
   multiplier: number;
 }
@@ -110,6 +113,7 @@ interface GameContextType {
   collectGem: (gemId: string) => void;
   purchaseTool: (tool: Tool) => boolean;
   addGems: (amount: number) => void;
+  resetStats: () => Promise<void>;
 }
 
 const defaultGameState: GameState = {
@@ -197,6 +201,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetStats = useCallback(async () => {
+    try {
+      await AsyncStorage.removeItem("gameStats");
+      setStats(defaultStats);
+    } catch (error) {
+      console.error("Failed to reset stats:", error);
+    }
+  }, []);
+
   const playHaptic = useCallback((type: "tap" | "destroy" | "bonus" | "victory") => {
     if (!gameState.soundEnabled) return;
     
@@ -254,7 +267,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         fallingGems: prev.fallingGems.filter((g) => g.id !== gemId),
       }));
-    }, 3000);
+    }, 6000);
   }, []);
 
   const collectGem = useCallback((gemId: string) => {
@@ -495,6 +508,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         collectGem,
         purchaseTool,
         addGems,
+        resetStats,
       }}
     >
       {children}

@@ -27,6 +27,18 @@ function setupCors(app: express.Application) {
       });
     }
 
+    // Production: allow origin from EXPO_PUBLIC_DOMAIN (e.g. https://n8n.telemaco.com.mx)
+    if (process.env.EXPO_PUBLIC_DOMAIN) {
+      const url = process.env.EXPO_PUBLIC_DOMAIN.trim();
+      const originUrl = url.startsWith("http") ? url : `https://${url}`;
+      try {
+        const parsed = new URL(originUrl);
+        origins.add(parsed.origin);
+      } catch {
+        // ignore invalid URL
+      }
+    }
+
     const origin = req.header("origin");
 
     // Allow localhost origins for Expo web development (any port)
@@ -160,7 +172,16 @@ function serveLandingPage({
   res.status(200).send(html);
 }
 
+function getBasePath(): string {
+  const raw = process.env.BASE_PATH || "";
+  const normalized = raw.trim().replace(/\/+$/, "") || "";
+  return normalized && !normalized.startsWith("/") ? `/${normalized}` : normalized;
+}
+
 function configureExpoAndLanding(app: express.Application) {
+  const basePath = getBasePath();
+  const mountPath = basePath || "/";
+
   const templatePath = path.resolve(
     process.cwd(),
     "server",
@@ -173,11 +194,16 @@ function configureExpoAndLanding(app: express.Application) {
   const hasWebBuild = fs.existsSync(distPath);
 
   if (hasWebBuild) {
-    log("Serving web app at / (game loads in browser)");
+    log(`Serving web app at ${mountPath} (game loads in browser)`);
   }
   log("Serving static Expo files with dynamic manifest routing");
+  if (basePath) {
+    log(`Base path: ${basePath}`);
+  }
 
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  const expoRouter = express.Router();
+
+  expoRouter.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {
       return next();
     }
@@ -211,11 +237,13 @@ function configureExpoAndLanding(app: express.Application) {
 
   // Web app static assets (JS, CSS, etc. from expo export --platform web)
   if (hasWebBuild) {
-    app.use(express.static(distPath, { index: false }));
+    expoRouter.use(express.static(distPath, { index: false }));
   }
 
-  app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app.use(express.static(path.resolve(process.cwd(), "static-build")));
+  expoRouter.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
+  expoRouter.use(express.static(path.resolve(process.cwd(), "static-build")));
+
+  app.use(mountPath, expoRouter);
 
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }

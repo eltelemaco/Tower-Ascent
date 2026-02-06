@@ -38,7 +38,7 @@ export function ToolsPanel() {
 
         {gameState.activeTool ? (
           <View style={styles.activeTool}>
-            <Feather name={gameState.activeTool.icon as any} size={14} color={GameColors.accent} />
+            <Feather name={gameState.activeTool.icon} size={14} color={GameColors.accent} />
             <ThemedText style={styles.activeToolText}>
               {gameState.activeTool.multiplier}x
             </ThemedText>
@@ -81,7 +81,7 @@ export function ToolsPanel() {
                   >
                     <View style={styles.toolIcon}>
                       <Feather 
-                        name={tool.icon as any} 
+                        name={tool.icon} 
                         size={24} 
                         color={isActive ? GameColors.accent : canAfford ? GameColors.primary : GameColors.textMuted} 
                       />

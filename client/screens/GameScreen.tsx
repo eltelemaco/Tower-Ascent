@@ -1,5 +1,5 @@
-import React, { useCallback } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -25,6 +25,7 @@ import BonusModal from "@/components/BonusModal";
 import SpeechBubble from "@/components/SpeechBubble";
 import { FallingGem } from "@/components/FallingGem";
 import { ToolsPanel } from "@/components/ToolsPanel";
+import { PickaxeCursor } from "@/components/PickaxeCursor";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -35,6 +36,10 @@ export default function GameScreen() {
 
   const tapScale = useSharedValue(1);
   const tapOpacity = useSharedValue(0);
+
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [isOverTapArea, setIsOverTapArea] = useState(false);
+  const [cursorTapAnim, setCursorTapAnim] = useState(false);
 
   const onTap = useCallback(() => {
     if (gameState.isPaused || gameState.isVictory || gameState.showBonus) return;
@@ -50,6 +55,11 @@ export default function GameScreen() {
       withTiming(0.15, { duration: 50 }),
       withTiming(0, { duration: 150 })
     );
+
+    if (Platform.OS === "web") {
+      setCursorTapAnim(true);
+      setTimeout(() => setCursorTapAnim(false), 200);
+    }
 
     handleTap();
   }, [gameState.isPaused, gameState.isVictory, gameState.showBonus, handleTap]);
@@ -102,13 +112,7 @@ export default function GameScreen() {
         <FallingGem key={gem.id} gem={gem} onCollect={collectGem} />
       ))}
 
-      <AnimatedPressable
-        style={[styles.gameArea, tapAreaAnimatedStyle]}
-        onPress={onTap}
-        testID="tap-area"
-      >
-        <Animated.View style={[styles.tapFeedback, tapFeedbackStyle]} />
-
+      <View style={styles.gameArea}>
         <View style={styles.characterContainer}>
           <View style={styles.speechBubbleContainer}>
             {gameState.characterMessage.length > 0 ? (
@@ -118,12 +122,44 @@ export default function GameScreen() {
           <Character state={gameState.characterState} />
         </View>
 
-        <Tower
-          blocksRemaining={gameState.blocksRemaining}
-          progress={progress}
-          currentBlockIndex={currentBlockIndex}
-        />
-      </AnimatedPressable>
+        <AnimatedPressable
+          style={[
+            styles.towerTapWrapper,
+            styles.tapAreaNoSelect,
+            tapAreaAnimatedStyle,
+            Platform.OS === "web" && isOverTapArea && styles.tapAreaCursorNone,
+          ]}
+          onPress={onTap}
+          onContextMenu={(e) => e?.preventDefault?.()}
+          onMouseMove={
+            Platform.OS === "web"
+              ? (e: { nativeEvent: { clientX: number; clientY: number } }) => {
+                  const { clientX, clientY } = e.nativeEvent;
+                  setCursorPos({ x: clientX, y: clientY });
+                  setIsOverTapArea(true);
+                }
+              : undefined
+          }
+          onMouseLeave={Platform.OS === "web" ? () => setIsOverTapArea(false) : undefined}
+          testID="tap-area"
+        >
+          <Animated.View style={[styles.tapFeedback, tapFeedbackStyle]} />
+          <Tower
+            blocksRemaining={gameState.blocksRemaining}
+            progress={progress}
+            currentBlockIndex={currentBlockIndex}
+          />
+        </AnimatedPressable>
+
+        {Platform.OS === "web" && (
+          <PickaxeCursor
+            visible={isOverTapArea}
+            x={cursorPos.x}
+            y={cursorPos.y}
+            isTapping={cursorTapAnim}
+          />
+        )}
+      </View>
 
       <View style={styles.footer}>
         <View style={styles.clickCounterContainer}>
@@ -210,6 +246,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  towerTapWrapper: {
+    alignSelf: "center",
+    position: "relative",
+  },
+  tapAreaNoSelect: {
+    userSelect: "none",
+    // @ts-expect-error - web-only, prevents text/element selection and context menu
+    WebkitUserSelect: "none",
+  },
+  tapAreaCursorNone: {
+    cursor: "none",
   },
   tapFeedback: {
     ...StyleSheet.absoluteFillObject,

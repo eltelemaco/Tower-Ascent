@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- handle -->
+  <path d="M14 8 L14 28 L18 28 L18 8 Z" fill="#5D4E3D" stroke="#3d3528" stroke-width="1"/>
+  <!-- head (pick side) -->
+  <path d="M6 8 L14 6 L22 8 L18 12 L10 12 Z" fill="#8B7355" stroke="#6B5B4B" stroke-width="1"/>
+  <!-- highlight -->
+  <path d="M10 10 L14 8 L14 11 Z" fill="rgba(255,255,255,0.25)"/>
+</svg>

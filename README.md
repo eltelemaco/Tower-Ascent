@@ -63,8 +63,6 @@ Tower-Ascent/
 │   │   └── query-client.ts    # TanStack React Query client
 │   ├── navigation/
 │   │   ├── RootStackNavigator.tsx   # Main app stack (MainMenu, Game)
-│   │   ├── MainTabNavigator.tsx
-│   │   ├── MainTabNavigator26.tsx
 │   │   ├── HomeStackNavigator.tsx
 │   │   └── ProfileStackNavigator.tsx
 │   └── screens/
