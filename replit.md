@@ -1,6 +1,6 @@
 # Tower Rescue
 
-## Overview
+## Overview and features
 
 Tower Rescue is a casual idle-clicker mobile game built with Expo and React Native. Players save a character trapped on a tower by progressively destroying blocks through tapping. The game features character-driven emotional engagement where the character reacts to player progress with cheers, encouragement, and animations.
 
